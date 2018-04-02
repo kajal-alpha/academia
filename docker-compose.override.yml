@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  academia.web:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "45455:80"
