@@ -44,20 +44,27 @@ Task("Restore")
     DotNetCoreRestore();
 });
 
-Task("NpmRestore")
+Task("NgTestCoverage")
 .Does(() => {
-    var settings = new NpmInstallSettings();
+    //Build Angular frontend project using Angular cli
+    var runSettings = new NpmRunScriptSettings {
+      ScriptName = "ng",
+      WorkingDirectory = "src/Academia.Web/ClientApp",
+      LogLevel = NpmLogLevel.Warn
+    };
+    runSettings.Arguments.Add("test");
+    runSettings.Arguments.Add("--single-run");
+    runSettings.Arguments.Add("--cc");
 
-    settings.LogLevel = NpmLogLevel.Info;
-    settings.WorkingDirectory = "src/Academia.Web/";
+    NpmRunScript(runSettings);
 
-    NpmInstall(settings);
+    CreateDirectory("./tests/Angular");
+    CopyFile("./src/Academia.Web/ClientApp/coverage/coverage.xml", "./tests/Angular/coverage.xml");
 });
 
 Task("Build")
 .IsDependentOn("Clean")
 .IsDependentOn("Restore")
-.IsDependentOn("NpmRestore")
 .Does(() => {
     DotNetCoreBuild(solution,
         new DotNetCoreBuildSettings
@@ -70,6 +77,7 @@ Task("Build")
 
 Task("Test")
 .IsDependentOn("Build")
+.IsDependentOn("NgTestCoverage")
 .Does(() => {
     var projectFiles = GetFiles("./tests/**/*.csproj");
     foreach(var file in projectFiles)
@@ -87,6 +95,7 @@ Task("Test")
 #tool "nuget:?package=OpenCover"
 Task("OpenCover")
 .IsDependentOn("Build")
+.IsDependentOn("NgTestCoverage")
 .Does(() => {
     var projectFiles = GetFiles("./tests/**/*.csproj");
     foreach(var file in projectFiles)
